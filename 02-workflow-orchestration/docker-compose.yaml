@@ -1,0 +1,80 @@
+volumes:
+  ny_taxi_postgres_data:
+    driver: local   # Stores homework taxi data (ny_taxi database)
+  kestra_postgres_data:
+    driver: local   # Stores Kestra's own metadata (executions, flows, etc.)
+  kestra_data:
+    driver: local   # Stores Kestra file-based storage (outputs, logs, etc.)
+
+services:
+  # Main Postgres database for the homework (ny_taxi)
+  # This is where yellow_tripdata and green_tripdata live.
+  pgdatabase:
+    image: postgres:18
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: root
+      POSTGRES_DB: ny_taxi
+    ports:
+      - "5432:5432"   # Exposes Postgres on localhost:5432
+    volumes:
+      - ny_taxi_postgres_data:/var/lib/postgresql
+
+  # Postgres instance used internally by Kestra
+  # It holds Kestra's configuration, executions and state.
+  kestra_postgres:
+    image: postgres:18
+    volumes:
+      - kestra_postgres_data:/var/lib/postgresql
+    environment:
+      POSTGRES_DB: kestra
+      POSTGRES_USER: kestra
+      POSTGRES_PASSWORD: k3str4
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+
+  # Kestra server (UI + API) for running the homework flows
+  kestra:
+    image: kestra/kestra:v1.1
+    pull_policy: always
+    user: "root"      # Needed only for Docker socket access in this dev setup
+    command: server standalone
+    volumes:
+      - kestra_data:/app/storage
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /tmp/kestra-wd:/tmp/kestra-wd
+    environment:
+      KESTRA_CONFIGURATION: |
+        datasources:
+          postgres:
+            url: jdbc:postgresql://kestra_postgres:5432/kestra
+            driverClassName: org.postgresql.Driver
+            username: kestra
+            password: k3str4
+        kestra:
+          server:
+            basicAuth:
+              username: "admin@kestra.io"   # Login for the UI
+              password: Admin1234
+          repository:
+            type: postgres
+          storage:
+            type: local
+            local:
+              basePath: "/app/storage"
+          queue:
+            type: postgres
+          tasks:
+            tmpDir:
+              path: /tmp/kestra-wd/tmp
+          url: http://localhost:8080/
+    ports:
+      - "8080:8080"   # Kestra UI
+      - "8081:8081"   # Additional Kestra port
+    depends_on:
+      kestra_postgres:
+        condition: service_started
+
