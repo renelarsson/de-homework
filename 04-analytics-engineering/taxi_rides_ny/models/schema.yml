@@ -1,0 +1,25 @@
+version: 2
+
+models:
+  - name: dim_zones
+    columns:
+      - name: location_id
+        tests:
+          - not_null
+          - unique
+
+  - name: fct_trips
+    columns:
+      - name: trip_id
+        tests:
+          - not_null
+          - unique
+
+  - name: fct_monthly_zone_revenue
+    columns:
+      - name: service_type
+        tests:
+          - not_null
+      - name: revenue_month
+        tests:
+          - not_null

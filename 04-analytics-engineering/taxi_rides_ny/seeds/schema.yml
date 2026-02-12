@@ -1,0 +1,9 @@
+version: 2
+
+seeds:
+  - name: taxi_zone_lookup
+    columns:
+      - name: locationid
+        tests:
+          - not_null
+          - unique

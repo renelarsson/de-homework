@@ -1,0 +1,40 @@
+name: 'taxi_rides_ny'
+version: '1.0.0'
+config-version: 2
+
+# This is the *profile name* dbt Core looks up in profiles.yml (or ~/.dbt/profiles.yml).
+# In dbt Cloud, credentials are managed in the Cloud UI; this setting mainly matters
+# when running dbt Core locally.
+profile: 'taxi_rides_ny'
+
+# If you want this local repo to run via the dbt Cloud CLI, link it to your Cloud project.
+# The dbt Cloud CLI reads ~/.dbt/dbt_cloud.yml (downloaded from dbt Cloud) for auth.
+dbt-cloud:
+  project-id: 70471823552275
+
+model-paths: ["models"]
+seed-paths: ["seeds"]
+macro-paths: ["macros"]
+analysis-paths: ["analyses"]
+test-paths: ["tests"]
+snapshot-paths: ["snapshots"]
+
+clean-targets:
+  - "target"
+  - "dbt_packages"
+
+models:
+  taxi_rides_ny:
+    # dbt *model materialization* (tables vs views) happens here.
+    # This is separate from loading raw data into BigQuery tables (yellow_tripdata/green_tripdata).
+    +materialized: table
+    staging:
+      +materialized: table
+    intermediate:
+      +materialized: table
+    core:
+      +materialized: table
+
+seeds:
+  taxi_rides_ny:
+    +quote_columns: false

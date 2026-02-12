@@ -1,0 +1,26 @@
+version: 2
+
+sources:
+  - name: nytaxi
+    database: de-zoomcamp-485107
+    schema: nytaxi
+    tables:
+      - name: yellow_tripdata
+      - name: green_tripdata
+
+models:
+  - name: stg_yellow_tripdata
+    columns:
+      - name: payment_type
+        tests:
+          - accepted_values:
+              values: [1, 2, 3, 4, 5]
+              quote: false
+
+  - name: stg_green_tripdata
+    columns:
+      - name: payment_type
+        tests:
+          - accepted_values:
+              values: [1, 2, 3, 4, 5]
+              quote: false

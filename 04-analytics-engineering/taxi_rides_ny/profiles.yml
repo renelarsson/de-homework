@@ -1,0 +1,15 @@
+taxi_rides_ny:
+  target: prod
+  outputs:
+    prod:
+      # dbt Core (local) BigQuery connection.
+      # If you run via dbt Cloud (Studio) or via the dbt Cloud CLI, credentials come from
+      # dbt Cloud instead, and this file is not used.
+      type: bigquery
+      method: service-account
+      project: de-zoomcamp-485107
+      dataset: nytaxi
+      threads: 4
+      timeout_seconds: 300
+      location: europe-north2
+      keyfile: ../de-zoomcamp-485107-3cbafa3d7c94.json
