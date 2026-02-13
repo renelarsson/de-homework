@@ -14,13 +14,15 @@ models:
       - name: payment_type
         tests:
           - accepted_values:
-              values: [1, 2, 3, 4, 5]
-              quote: false
+              arguments:
+                values: [1, 2, 3, 4, 5]
+                quote: false
 
   - name: stg_green_tripdata
     columns:
       - name: payment_type
         tests:
           - accepted_values:
-              values: [1, 2, 3, 4, 5]
-              quote: false
+              arguments:
+                values: [1, 2, 3, 4, 5]
+                quote: false
