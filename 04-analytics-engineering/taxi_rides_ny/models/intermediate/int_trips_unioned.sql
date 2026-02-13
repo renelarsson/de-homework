@@ -20,6 +20,7 @@ with yellow as (
 		total_amount,
 		cast(null as int64) as trip_type,
 		congestion_surcharge,
+		airport_fee,
 		service_type
 	from {{ ref('stg_yellow_tripdata') }}
 ),
@@ -46,6 +47,7 @@ green as (
 		total_amount,
 		trip_type,
 		congestion_surcharge,
+		cast(null as float64) as airport_fee,
 		service_type
 	from {{ ref('stg_green_tripdata') }}
 )
