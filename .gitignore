@@ -209,6 +209,16 @@ logs/
 
 # Data files (avoid committing local datasets)
 *.parquet
+*.parquet.gz
+
+*.csv
+*.csv.gz
+
+# NYC TLC-style naming (extra safety)
+*_tripdata_*.csv
+*_tripdata_*.csv.gz
+*_tripdata_*.parquet
+*_tripdata_*.parquet.gz
 
 # Local outputs / scratch
 parquet_fixed/
@@ -217,6 +227,13 @@ parquet_fixed/
 **/de-zoomcamp-*.json
 **/gcs.json
 **/keys/*.json
+
+# Common key/cert formats
+*.pem
+*.p12
+*.pfx
+*.key
+*.crt
 
 # VS Code workspace settings
 .vscode/
@@ -234,9 +251,20 @@ terraform.tfstate
 terraform.tfstate.backup
 *.tfstate.backup
 
+*.tfstate
+*.tfstate.*
+
+*.tfvars
+*.tfvars.json
+*.tfplan
+crash.log
+crash.*.log
+
 # Local GCP keys (service account JSON etc.)
 01-docker-terraform/keys/
 
 # Local data files
 *.parquet
-/tutorials
+
+# Course reference material (keep local; don't commit)
+/tutorials/

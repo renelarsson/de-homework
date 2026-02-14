@@ -2,11 +2,11 @@ version: 2
 
 sources:
   - name: nytaxi
-    database: de-zoomcamp-485107
     schema: nytaxi
     tables:
       - name: yellow_tripdata
       - name: green_tripdata
+      - name: fhv_tripdata_2019
 
 models:
   - name: stg_yellow_tripdata

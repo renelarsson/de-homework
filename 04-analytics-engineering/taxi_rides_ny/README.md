@@ -1,8 +1,8 @@
-# taxi_rides_ny (dbt project)
+# hw4.md (dbt project)
 
 This repo can be run in two different ways:
 
-1) **dbt Cloud (recommended if you're following `tutorials/04-analytics-engineering/cloud_setup.md`)**
+1) **dbt Cloud**
 	 - You develop/run models in dbt Cloud Studio, OR
 	 - You run commands from this Codespace using the **dbt Cloud CLI** (executes in the Cloud dev environment).
 
