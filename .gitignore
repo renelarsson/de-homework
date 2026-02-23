@@ -266,5 +266,13 @@ crash.*.log
 # Local data files
 *.parquet
 
+# Local DuckDB database files
+duckdb.db
+*.duckdb
+
 # Course reference material (keep local; don't commit)
 /tutorials/
+
+# Bruin local logs (keep config committed)
+logs/runs/
+logs/*.log
