@@ -11,7 +11,89 @@ In this homework, we'll use Bruin to build a complete data pipeline, from ingest
 
 After completing the setup, you should have a working NYC taxi data pipeline.
 
-# FROM HERE
+## Quick start (clone → run)
+
+These steps assume installation, extention, and initialization is done, and the existing pipeline can be tested directly at `05-data-platforms/my-pipeline/`.
+
+1) Install Bruin CLI (once):
+
+```sh
+curl -LsSf https://getbruin.com/install/cli | sh
+export PATH="$HOME/.local/bin:$PATH"
+bruin version
+```
+
+2) Validate the pipeline:
+
+```sh
+bruin validate 05-data-platforms/my-pipeline/pipeline
+```
+
+3) Pick a historical window (reproducible). Example: January 2022:
+
+```sh
+export START_DATE=2022-01-01
+export END_DATE=2022-02-01
+```
+
+4) (Optional) Reset local state for reproducibility:
+
+```sh
+# Delete the DuckDB file and Bruin logs to start from a clean slate
+rm -f 05-data-platforms/my-pipeline/duckdb.db
+rm -rf logs/runs logs/queries
+```
+
+### Run step-by-step (seed → ingestion → staging → report)
+
+```sh
+# 1) Seed lookup table (loads the CSV into DuckDB)
+bruin run 05-data-platforms/my-pipeline/pipeline/assets/ingestion/payment_lookup.asset.yml
+
+# 2) Ingest trips (downloads TLC parquet for the window)
+bruin run \
+  --start-date "$START_DATE" --end-date "$END_DATE" \
+  --var '{"taxi_types":["yellow"]}' \
+  05-data-platforms/my-pipeline/pipeline/assets/ingestion/trips.py
+
+# 3) First time only: build incremental tables cleanly
+bruin run --full-refresh \
+  --start-date "$START_DATE" --end-date "$END_DATE" \
+  05-data-platforms/my-pipeline/pipeline/assets/staging/trips.sql
+
+bruin run --full-refresh \
+  --start-date "$START_DATE" --end-date "$END_DATE" \
+  05-data-platforms/my-pipeline/pipeline/assets/reports/trips_report.sql
+```
+
+### Run end-to-end (entire pipeline)
+
+First run on a fresh DuckDB database:
+
+```sh
+bruin run 05-data-platforms/my-pipeline/pipeline --full-refresh \
+  --start-date "$START_DATE" --end-date "$END_DATE" \
+  --var '{"taxi_types":["yellow"]}'
+```
+
+Subsequent runs for the same window (incremental):
+
+```sh
+bruin run 05-data-platforms/my-pipeline/pipeline \
+  --start-date "$START_DATE" --end-date "$END_DATE" \
+  --var '{"taxi_types":["yellow"]}'
+```
+
+Confirm row counts:
+
+```sh
+bruin query --connection duckdb-default --query "SELECT COUNT(*) AS n FROM ingestion.trips"
+bruin query --connection duckdb-default --query "SELECT COUNT(*) AS n FROM staging.trips"
+bruin query --connection duckdb-default --query "SELECT COUNT(*) AS n FROM reports.trips_report"
+```
+
+## Installation and initialization
+
 
 Install Bruin CLI:
 
@@ -40,7 +122,11 @@ bruin init zoomcamp my-pipeline
 cd my-pipeline
 ```
 
-Configure DuckDB connection in .bruin.yml (create/update this file in the my-pipeline folder):
+## Configure DuckDB connection (module-friendly)
+
+Bruin typically resolves config (`.bruin.yml`) from the **git root**. Since this repo contains multiple modules, keep **one** `.bruin.yml` at the repo root and point it to the DuckDB file for this module.
+
+From the repo root (`/workspaces/de-homework`), create/update `.bruin.yml` like this:
 
 ```yml
 default_environment: default
@@ -50,17 +136,13 @@ environments:
     connections:
       duckdb:
         - name: duckdb-default
-          path: duckdb.db
+          path: 05-data-platforms/my-pipeline/duckdb.db
 ```
 
-Important config gotcha:
+This ensures:
 
-- Bruin resolves `.bruin.yml` from the git root by default.
-- To force Bruin to use THIS pipeline’s `.bruin.yml`, set:
-
-```sh
-export BRUIN_CONFIG_FILE="$PWD/.bruin.yml"
-```
+- You always have a single place to configure connections.
+- When you run Bruin from anywhere inside the repo, the `duckdb-default` connection points to the same DB.
 
 Fix all TODO placeholders (follow tutorials/05-data-platforms/03-nyc-taxi-pipeline.md):
 
@@ -74,6 +156,28 @@ Validate the pipeline (this template keeps pipeline.yml under ./pipeline/):
 
 ```sh
 bruin validate ./pipeline
+```
+
+## Run a single asset (seed) to load the lookup table
+
+Seed assets ingest a local CSV into the database. This is how the payment lookup CSV gets loaded:
+
+```sh
+# Loads the CSV into DuckDB (small static lookup)
+bruin run ./pipeline/assets/ingestion/payment_lookup.asset.yml
+```
+
+You can also run the Python ingestion asset only:
+
+```sh
+# Loads trip records into a different table (ingestion.trips, large fact-like trips data)
+bruin run ./pipeline/assets/ingestion/trips.py
+```
+
+Or run an asset and everything downstream of it:
+
+```sh
+bruin run ./pipeline/assets/ingestion/trips.py --downstream
 ```
 
 First run on a fresh DuckDB database (creates tables cleanly):
@@ -99,8 +203,22 @@ bruin query --connection duckdb-default --query "SELECT COUNT(*) AS n FROM inges
 bruin query --connection duckdb-default --query "SELECT COUNT(*) AS n FROM staging.trips"
 bruin query --connection duckdb-default --query "SELECT COUNT(*) AS n FROM reports.trips_report"
 ```
-# TO HERE
----
+
+## View the pipeline in Lineage
+
+In VS Code:
+
+1. Open `pipeline/pipeline.yml`.
+2. Open the Bruin panel (Activity Bar → Bruin).
+3. Use the **Lineage** tab to see the dependency graph.
+
+Note: The VS Code Bruin “Run” button often defaults to **today’s date**. If the NYC TLC parquet for the current month isn’t published yet, ingestion may load 0 rows. For reproducible runs, use a historical interval like `--start-date 2022-01-01 --end-date 2022-02-01`.
+
+CLI alternative:
+
+```sh
+bruin lineage --full ./pipeline/assets/reports/trips_report.sql
+```
 
 ### Question 1. Bruin Pipeline Structure
 

@@ -276,3 +276,11 @@ duckdb.db
 # Bruin local logs (keep config committed)
 logs/runs/
 logs/*.log
+
+# Bruin local query logs/artifacts
+logs/queries/
+
+.bruin.yml
+logs/runs
+*.py[cod]
+logs/queries
