@@ -21,28 +21,33 @@ materialization:
   type: table
   # suggested strategy: time_interval
   strategy: time_interval
-  incremental_key: pickup_date
+  incremental_key: trip_date
   time_granularity: date
 
 columns:
-  - name: payment_type_name
-    type: VARCHAR
-    description: Payment type label.
-    primary_key: true
-  - name: pickup_date
+  - name: trip_date
     type: DATE
     description: Pickup date.
+    primary_key: true
+  - name: taxi_type
+    type: VARCHAR
+    description: Taxi type (yellow/green).
+    primary_key: true
+  - name: payment_type
+    type: VARCHAR
+    description: Payment type label.
     primary_key: true
   - name: trip_count
     type: BIGINT
     description: Number of trips.
     checks:
       - name: non_negative
-  - name: total_amount_sum
+  - name: total_fare
     type: DOUBLE
-    description: Sum of total_amount.
-    # Note: TLC data may include negative totals (e.g., adjustments/refunds),
-    # so we intentionally do not enforce non_negative here.
+    description: Sum of fare_amount.
+  - name: avg_fare
+    type: DOUBLE
+    description: Average fare_amount.
 
 @bruin */
 
@@ -53,11 +58,13 @@ columns:
 -- - GROUP BY your dimension + date columns
 
 SELECT
-  COALESCE(payment_type_name, 'unknown') AS payment_type_name,
-  CAST(date_trunc('day', pickup_datetime) AS DATE) AS pickup_date,
-  COUNT(*) AS trip_count,
-  SUM(COALESCE(total_amount, 0)) AS total_amount_sum
+    CAST(pickup_datetime AS DATE) AS trip_date,
+    taxi_type,
+    COALESCE(payment_type_name, 'unknown') AS payment_type,
+    COUNT(*) AS trip_count,
+    SUM(COALESCE(fare_amount, 0)) AS total_fare,
+    AVG(COALESCE(fare_amount, 0)) AS avg_fare
 FROM staging.trips
 WHERE pickup_datetime >= '{{ start_datetime }}'
   AND pickup_datetime < '{{ end_datetime }}'
-GROUP BY 1, 2
+GROUP BY 1, 2, 3

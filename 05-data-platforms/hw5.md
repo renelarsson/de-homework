@@ -15,48 +15,27 @@ After completing the setup, you should have a working NYC taxi data pipeline.
 
 These steps assume installation, extention, and initialization is done, and the existing pipeline can be tested directly at `05-data-platforms/my-pipeline/`.
 
-1) Install Bruin CLI (once):
-
-```sh
-curl -LsSf https://getbruin.com/install/cli | sh
-export PATH="$HOME/.local/bin:$PATH"
-bruin version
-```
-
-2) Validate the pipeline:
-
-```sh
-bruin validate 05-data-platforms/my-pipeline/pipeline
-```
-
-3) Pick a historical window (reproducible). Example: January 2022:
-
-```sh
-export START_DATE=2022-01-01
-export END_DATE=2022-02-01
-```
-
-4) (Optional) Reset local state for reproducibility:
-
-```sh
-# Delete the DuckDB file and Bruin logs to start from a clean slate
-rm -f 05-data-platforms/my-pipeline/duckdb.db
-rm -rf logs/runs logs/queries
-```
-
 ### Run step-by-step (seed → ingestion → staging → report)
 
 ```sh
-# 1) Seed lookup table (loads the CSV into DuckDB)
+# 1) Delete the DuckDB file and Bruin logs to start from a clean slate
+rm -f 05-data-platforms/my-pipeline/duckdb.db
+rm -rf logs/*
+
+# 2) Pick a historical window (e.g. January 2022)
+export START_DATE=2022-01-01
+export END_DATE=2022-02-01
+
+# 3) Seed lookup table (loads the CSV into DuckDB)
 bruin run 05-data-platforms/my-pipeline/pipeline/assets/ingestion/payment_lookup.asset.yml
 
-# 2) Ingest trips (downloads TLC parquet for the window)
+# 4) Ingest trips (downloads TLC parquet for the window)
 bruin run \
   --start-date "$START_DATE" --end-date "$END_DATE" \
   --var '{"taxi_types":["yellow"]}' \
   05-data-platforms/my-pipeline/pipeline/assets/ingestion/trips.py
 
-# 3) First time only: build incremental tables cleanly
+# 5) First time only: build incremental tables cleanly
 bruin run --full-refresh \
   --start-date "$START_DATE" --end-date "$END_DATE" \
   05-data-platforms/my-pipeline/pipeline/assets/staging/trips.sql
@@ -92,8 +71,9 @@ bruin query --connection duckdb-default --query "SELECT COUNT(*) AS n FROM stagi
 bruin query --connection duckdb-default --query "SELECT COUNT(*) AS n FROM reports.trips_report"
 ```
 
-## Installation and initialization
+## Start form scratch
 
+### Installation and initialization
 
 Install Bruin CLI:
 
@@ -122,7 +102,7 @@ bruin init zoomcamp my-pipeline
 cd my-pipeline
 ```
 
-## Configure DuckDB connection (module-friendly)
+### Configure DuckDB connection (module-friendly)
 
 Bruin typically resolves config (`.bruin.yml`) from the **git root**. Since this repo contains multiple modules, keep **one** `.bruin.yml` at the repo root and point it to the DuckDB file for this module.
 
@@ -158,7 +138,7 @@ Validate the pipeline (this template keeps pipeline.yml under ./pipeline/):
 bruin validate ./pipeline
 ```
 
-## Run a single asset (seed) to load the lookup table
+### Run a single asset (seed) to load the lookup table
 
 Seed assets ingest a local CSV into the database. This is how the payment lookup CSV gets loaded:
 
@@ -204,7 +184,7 @@ bruin query --connection duckdb-default --query "SELECT COUNT(*) AS n FROM stagi
 bruin query --connection duckdb-default --query "SELECT COUNT(*) AS n FROM reports.trips_report"
 ```
 
-## View the pipeline in Lineage
+### View the pipeline in Lineage
 
 In VS Code:
 
@@ -219,6 +199,72 @@ CLI alternative:
 ```sh
 bruin lineage --full ./pipeline/assets/reports/trips_report.sql
 ```
+
+## Building a pipeline with MCP
+
+
+### Setting Up Bruin MCP
+
+1. Open the Command Palette with Cmd+Shift+P (macOS) or Ctrl+Shift+P (Windows/Linux).
+2. Type "Add MCP" and select the option to add a new MCP server.
+3. Select Command (stdio) as the server type.
+4. Enter bruin mcp as the command.
+5. Restart your IDE.
+
+### Hybrid Approach
+
+- **Create a fresh MCP-only project:**
+```sh
+cd 05-data-platforms
+bruin init zoomcamp mcp-pipeline
+```
+- **Follow above procedure for TODOs, configuration, requirements, etc., and validate the New Pipeline:**
+
+```sh
+bruin validate mcp-pipeline
+```
+- **Run the 'Layer-by-Layer Prompts' in the README.md file**
+- **Test if the procedure worked:**
+
+1. Validate the pipeline again
+```sh
+# Check that changes made are valid
+cd mcp-pipeline/
+bruin validate ./pipeline
+
+```
+2. Run Each Layer Sequentially
+```sh
+# Seed Layer - Load the payment lookup table
+bruin run ./pipeline/assets/ingestion/payment_lookup.asset.yml
+
+# Ingestion Layer - Ingest trips data
+bruin run ./pipeline/assets/ingestion/trips.py \
+  --start-date "2022-01-01" \
+  --end-date "2022-02-01" \
+  --var '{"taxi_types":["yellow"]}'
+
+# Staging Layer - Build the staging table
+bruin run ./pipeline/assets/staging/trips.sql \
+  --full-refresh \
+  --start-date "2022-01-01" \
+  --end-date "2022-02-01"
+
+# Reports Layer - Build the reports table
+bruin run ./pipeline/assets/reports/trips_report.sql \
+  --full-refresh \
+  --start-date "2022-01-01" \
+  --end-date "2022-02-01"
+```
+
+3. Verify Results
+```sh
+# Query the database to confirm data was loaded correctly
+bruin query --connection duckdb-default --query "SELECT COUNT(*) AS n FROM ingestion.trips"; \
+bruin query --connection duckdb-default --query "SELECT COUNT(*) AS n FROM staging.trips"; \
+bruin query --connection duckdb-default --query "SELECT COUNT(*) AS n FROM reports.trips_report"
+```
+
 
 ### Question 1. Bruin Pipeline Structure
 

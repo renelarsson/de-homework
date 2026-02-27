@@ -48,6 +48,21 @@ materialization:
   incremental_key: pickup_datetime
   time_granularity: timestamp
 
+columns:
+  - name: pickup_datetime
+    type: timestamp
+    description: "When the meter was engaged"
+    checks:
+      - name: not_null
+
+custom_checks:
+  - name: row_count_positive
+    description: "Staging should produce at least 1 row for the interval"
+    query: |
+      SELECT CASE WHEN COUNT(*) > 0 THEN 1 ELSE 0 END
+      FROM staging.trips
+    value: 1
+
 @bruin */
 
 -- TODO: Write the staging SELECT query.
@@ -66,10 +81,25 @@ materialization:
 -- If you don't filter, you'll insert ALL data but only delete the window's data = duplicates.
 
 SELECT
-  t.*,
-  p.payment_type_name
+    t.pickup_datetime,
+    t.dropoff_datetime,
+    t.pickup_location_id,
+    t.dropoff_location_id,
+    t.fare_amount,
+    t.total_amount,
+    t.taxi_type,
+    t.payment_type,
+    p.payment_type_name
 FROM ingestion.trips AS t
 LEFT JOIN ingestion.payment_lookup AS p
-  ON t.payment_type = p.payment_type_id
+    ON t.payment_type = p.payment_type_id
 WHERE t.pickup_datetime >= '{{ start_datetime }}'
   AND t.pickup_datetime < '{{ end_datetime }}'
+QUALIFY ROW_NUMBER() OVER (
+    PARTITION BY t.pickup_datetime,
+                 t.dropoff_datetime,
+                 t.pickup_location_id,
+                 t.dropoff_location_id,
+                 t.fare_amount
+    ORDER BY t.pickup_datetime
+) = 1
