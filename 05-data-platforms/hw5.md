@@ -265,7 +265,6 @@ bruin query --connection duckdb-default --query "SELECT COUNT(*) AS n FROM stagi
 bruin query --connection duckdb-default --query "SELECT COUNT(*) AS n FROM reports.trips_report"
 ```
 
-
 ### Question 1. Bruin Pipeline Structure
 
 In a Bruin project, what are the required files/directories?
