@@ -85,7 +85,7 @@ VS Code (Copilot) - create `.vscode/mcp.json` in your project folder:
   }
 }
 ```
-**Run the pipeline first**:
+***Run the pipeline first***:
 ```sh
 uv sync
 # R: This will fetch the NYC taxi data from the API and load it into DuckDB
@@ -94,7 +94,7 @@ uv run python taxi_pipeline.py
 Claude Code - run in your terminal:
 
 ```bash
-# R: Use the dlt MCP server for AI-assisted debugging, inspection, or metadata queries
+# NB: Skip it since the MCP server is already configured via mcp.json.
 claude mcp add dlt -- uv run --with "dlt[duckdb]" --with "dlt-mcp[search]" python -m dlt_mcp
 ```
 
@@ -108,7 +108,7 @@ pip install "dlt[workspace]"
 
 ### Step 4: Initialize the Project
 
-**NB**: This step is unnecessary because the taxi_pipeline.py file has already created manually. The pyproject.toml and dlt setup are already in place.
+***NB: This step is unnecessary because the taxi_pipeline.py file has already created manually. The pyproject.toml and dlt setup are already in place.***
 
 ```bash
 dlt init dlthub:taxi_pipeline duckdb
@@ -122,7 +122,7 @@ You can name the project whatever you like. Since this API has no scaffold, the 
 
 ### Step 5: Prompt the Agent
 
-**NB**: Since we’ve already implemented the pipeline manually in taxi_pipeline.py, this step is also complete.
+***NB: Since we’ve already implemented the pipeline manually in taxi_pipeline.py, this step is also complete.***
 
 Now use your AI assistant to build the pipeline. You'll need to provide the API details in your prompt since there's no scaffold.
 
@@ -167,7 +167,7 @@ uv run python
 This ensures using the same environment where duckdb is installed.
 
 ```SH
-# Copy and paste the following code into the Python REPL:
+# Use the Python REPL:
 
 import duckdb
 
