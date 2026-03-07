@@ -91,3 +91,9 @@ If any of the above doesn’t match intended direction (e.g., not Python, differ
 ## Conventions
 - Keep changes scoped to a module (compose files, ports, and credentials are module-specific).
 - Don’t commit secrets: expect local GCP keys under `01-docker-terraform/keys/` and `gcs.json` for module 3.
+
+## Module 6 Homework (Spark)
+- Use `06-batch/setup/` and `06-batch/code/` as the source of truth (2026).
+- If `tutorials/06-batch/README.md` (2025 notes) conflicts with the 2026 files, disregard the 2025 notes.
+- Help answer `06-batch/hw6.md` one question at a time, and verify answers by actually running Spark/PySpark when feasible.
+- Maintain an interactive TODO/task tracker in chat while working through the questions.
